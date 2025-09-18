@@ -1,0 +1,49 @@
+# Core framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Legacy Flask (keeping for reference, not needed for FastAPI)
+# flask
+# flask_cors
+
+# AWS + Cloudfront
+boto3
+rsa>=4.9
+itsdangerous
+
+# OpenAI + tokenization
+openai
+tiktoken>=0.5.1
+
+# Subtitle processing
+srt
+
+# Environment config
+python-dotenv
+PyYAML
+
+# Logging and reliability
+loguru
+tenacity
+
+# Azure Speech Services
+azure-cognitiveservices-speech
+numpy
+
+# HTTP client for async requests
+httpx
+
+# Data validation
+pydantic>=2.0.0
+
+# File handling
+aiofiles
+
+# Additional FastAPI dependencies
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# websockets
+websockets==12.0
+

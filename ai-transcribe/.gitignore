@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+## my own custom -----------------------------------
+_old_version2/
+
+# security
+clients.yml
+
+
+**/_docu/**
+whisper-backend.service
+
+## -----------------------------------
+#cursor
+whisper-transcribe.code-workspace
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Flask specific
+instance/
+*.log
+flask.log
+
+# Environment variables
+.env
+.env.*
+
+# PyInstaller
+*.spec
+
+# Test cache
+.cache/
+pytest_cache/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Git backup files
+*.orig
+
+# Jupyter (if used)
+.ipynb_checkpoints/

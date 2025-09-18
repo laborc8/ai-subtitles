@@ -1,0 +1,169 @@
+<div class="p-6 max-w-4xl mx-auto">
+  <h2 class="text-xl font-semibold mb-4">Transcription Form</h2>
+
+  <div class="mb-4">
+    <label class="block font-medium mb-2">Select Client:</label>
+    <select class="w-full mb-2 border rounded p-2" [(ngModel)]="selectedClientId" (ngModelChange)="onClientChange()">
+      <option value="">-- Select a client --</option>
+      <option *ngFor="let client of environment.clients" [value]="client.id">
+        {{ client.name }}
+      </option>
+    </select>
+  </div>
+
+  <div class="mb-4">
+    <label class="block font-medium mb-2">Bucket:</label>
+    <span class="text-gray-600">{{ getSelectedClient()?.bucket || 'No client selected' }}</span>
+  </div>
+
+  <input class="w-full mb-2 border rounded p-2" [(ngModel)]="target" placeholder="Input S3 Key or Folder (Source)">
+
+  <div>
+    <label class="block font-medium mb-2">Video Language:</label>
+    <select class="w-full mb-2 border rounded p-2" [(ngModel)]="prompt_lang">
+      <option value="en">English</option>
+      <option value="de">German</option>
+      <option value="es">Spanish</option>
+      <option value="hu">Hungarian</option>
+      <option value="cs">Czech</option>
+      <option value="sv">Swedish</option>
+      <option value="ru">Russian</option>
+      <option value="zh">Chinese</option>
+      <option value="ja">Japanese</option>
+    </select>
+  </div>
+  
+
+  <div class="space-y-2 mb-4">
+    <label class="flex items-center">
+      <input type="checkbox" class="mr-2" [(ngModel)]="advancedEncoding">
+      Advanced Encoding Structure
+    </label>
+
+    <label class="flex items-center">
+      <input type="checkbox" class="mr-2" [(ngModel)]="enable_translation">
+      Translate to English
+    </label>
+
+    <label class="flex items-center">
+      <input type="checkbox" class="mr-2" [(ngModel)]="upload">
+      Upload transcription & subtitle to another bucket
+    </label>
+
+    <label class="flex items-center">
+      <input type="checkbox" class="mr-2" [(ngModel)]="override">
+      Override existing files
+    </label>
+  </div>
+
+  <div *ngIf="upload">
+    <input class="w-full mb-2 border rounded p-2" [(ngModel)]="upload_bucket" placeholder="Upload Bucket">
+    <input class="w-full mb-4 border rounded p-2" [(ngModel)]="upload_prefix" placeholder="Upload Prefix (e.g. uploads/output)">
+  </div>
+
+  <div class="mb-4">
+    <label class="block font-medium mb-2">Generate subtitle translations for:</label>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+      <label *ngFor="let lang of supportedLanguages" class="flex items-center space-x-2">
+        <input type="checkbox"
+               [(ngModel)]="lang.selected"
+               [checked]="lang.code === 'en'">
+        <span>{{ lang.label }}</span>
+      </label>
+    </div>
+  </div>
+
+  <button class="bg-green-600 text-white px-4 py-2 rounded" (click)="startTranscription()" [disabled]="isLoading || !selectedClientId">
+    Transcribe
+  </button>
+
+  <div class="mt-6 p-4 bg-white rounded shadow">
+    <h3 class="text-lg font-bold mb-2">Progress Log</h3>
+    <a (click)="pingServer()" class="text-blue-600 hover:underline cursor-pointer">[Ping Server]</a>
+
+    <div class="text-sm whitespace-pre-line font-mono mt-2">
+      <div *ngFor="let log of logs">{{ log }}</div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="flex items-center justify-center space-x-3 py-4 text-gray-500 text-sm">
+    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+    </svg>
+    <span>Transcribing... please wait.</span>
+  </div>
+
+  <div *ngIf="videoUrl && subtitleTracks.length" class="mt-10">
+    <div id="video-player"></div>
+  </div>
+
+  <div  class="mt-6 bg-white p-4 rounded shadow">
+    <h4 class="text-md font-semibold mb-2">Interactive Transcript</h4>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <input class="flex-grow p-2 border rounded"
+             [(ngModel)]="searchTerm"
+             placeholder="Search transcript..."
+             (ngModelChange)="onSearchChange()">
+
+      <label class="flex items-center whitespace-nowrap">
+        <input type="checkbox" class="mr-2" [(ngModel)]="showOriginal">
+        Show English side-by-side
+      </label>
+    </div>
+
+    <div [ngClass]="showOriginal ? 'grid grid-cols-2 gap-6' : 'block'" class="text-base leading-relaxed">
+
+      <!-- Show warning if transcript is missing -->
+      <ng-container *ngIf="!subtitlesByLang[selectedLang]?.length">
+        <p class="text-sm italic text-gray-500 mb-4">
+          Transcript not available for selected language ({{ selectedLang.toUpperCase() }}).
+        </p>
+      </ng-container>
+
+      <!-- Paragraph mode with clickable spans per subtitle -->
+      <ng-container *ngIf="!showOriginal">
+
+        <ng-container *ngFor="let sub of subtitlesByLang[selectedLang]; let i = index">
+          <span id="subtitle-{{sub.index}}"
+                (click)="seekTo(sub.startSeconds)"
+                [class.bg-gray-100]="i === activeSubtitleIndex"
+                class="cursor-pointer px-1 py-0.5 rounded hover:bg-gray-50 transition-all duration-150">
+            <span [innerHTML]="highlightSearch(sub.text, searchTerm)"></span>
+          </span>
+        </ng-container>
+      </ng-container>
+
+      <!-- Original bilingual layout (unchanged) -->
+      <ng-container *ngIf="showOriginal">
+        <ng-container *ngFor="let sub of subtitlesByLang[selectedLang]; let i = index">
+          <ng-container *ngIf="i === 0 || shouldInsertTimeBreak(i)">
+            <div class="col-span-2 text-xs text-gray-500 font-semibold mt-4 mb-2">
+              {{ formatTimeBlock(sub.startSeconds) }}
+            </div>
+          </ng-container>
+
+          <div id="subtitle-{{i}}"
+               (click)="seekTo(sub.startSeconds)"
+               [class.bg-gray-100]="i === activeSubtitleIndex"
+               class="cursor-pointer transition-all duration-200 border-b pb-2">
+            <div class="font-mono text-gray-600 text-xs">{{ sub.start }} → {{ sub.end }}</div>
+            <div [innerHTML]="highlightSearch(sub.text, searchTerm)"></div>
+          </div>
+
+          <div *ngIf="subtitlesByLang['en']?.[i]" class="border-b pb-2">
+            <div class="font-mono text-gray-400 text-xs">EN</div>
+            <div [innerHTML]="highlightSearch(subtitlesByLang['en'][i].text, searchTerm)"></div>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+
+
+  </div>
+</div>
+<footer class="text-center text-xs font-semibold mt-8 text-gray-500">
+  &copy; 2025 Studema — All rights reserved.
+  <p>&nbsp;</p>
+</footer>

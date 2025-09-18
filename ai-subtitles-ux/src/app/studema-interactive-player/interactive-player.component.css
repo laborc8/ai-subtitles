@@ -1,0 +1,29 @@
+:host {
+  display: block;
+  font-family: sans-serif;
+}
+
+#video-player {
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.transcript {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.noselect {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.prevent-copy {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}

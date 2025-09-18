@@ -1,0 +1,108 @@
+<div>
+  <div id="video-player" class="clearfix" style="margin-bottom: 20px;"></div>
+
+  <div class="form-inline" style="margin-bottom: 20px;">
+    <button class="btn btn-default btn-sm" (click)="setSpeed(1)">1x</button>
+    <button class="btn btn-default btn-sm" (click)="setSpeed(1.5)">1.5x</button>
+    <button class="btn btn-default btn-sm" (click)="setSpeed(2)">2x</button>
+
+    <div class="checkbox pull-right" style="margin-left: auto;">
+      <label>
+        <input type="checkbox" [(ngModel)]="showOriginal"> Show English side-by-side
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-bottom: 20px;">
+    <input
+      type="text"
+      class="form-control"
+      [(ngModel)]="searchTerm"
+      placeholder="Search transcript..."
+      (ngModelChange)="onSearchChange()"
+    >
+  </div>
+
+  <div class="transcript noselect" style="font-size: 13px; line-height: 1.5;">
+    <ng-container *ngIf="subtitlesByLang[selectedLang]?.length; else noTranscript">
+
+      <!-- SOLO Language Transcript -->
+      <ng-container *ngIf="!showOriginal">
+        <div
+          *ngFor="let sub of subtitlesByLang[selectedLang]; let i = index"
+          id="subtitle-{{sub.index}}"
+          class="subtitle-line prevent-copy"
+          [class.active]="i === activeSubtitleIndex"
+          style="position: relative; padding: 6px 10px; border-bottom: 1px solid #eee;"
+        >
+          <div
+            (click)="seekTo(sub.startSeconds)"
+            style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; z-index: 2;"
+          ></div>
+
+          <span
+            [innerHTML]="highlightSearch(sub.text, searchTerm)"
+            style="position: relative; z-index: 1; display: inline-block;">
+          </span>
+        </div>
+      </ng-container>
+
+      <!-- Bilingual View -->
+      <ng-container *ngIf="showOriginal">
+        <div class="row">
+          <div class="col-sm-6">
+            <strong class="text-uppercase">{{ selectedLang }}</strong>
+            <div
+              *ngFor="let sub of subtitlesByLang[selectedLang]; let i = index"
+              class="subtitle-line"
+              [class.active]="i === activeSubtitleIndex"
+              style="position: relative; padding: 6px 10px; border-bottom: 1px solid #eee;"
+            >
+              <div
+                (click)="seekTo(sub.startSeconds)"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; z-index: 2;"
+              ></div>
+
+              <div style="position: relative; z-index: 1;">
+                <div style="font-family: monospace; color: #888; font-size: 11px;">
+                  {{ sub.start }} → {{ sub.end }}
+                </div>
+                <div [innerHTML]="highlightSearch(sub.text, searchTerm)"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-6">
+            <strong class="text-uppercase">EN</strong>
+            <div
+              *ngFor="let sub of subtitlesByLang['en']; let i = index"
+              class="subtitle-line"
+              style="position: relative; padding: 6px 10px; border-bottom: 1px solid #eee;"
+            >
+              <div
+                (click)="seekTo(sub.startSeconds)"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; z-index: 2;"
+              ></div>
+
+              <div style="position: relative; z-index: 1;">
+                <div style="font-family: monospace; color: #ccc; font-size: 11px;">
+                  EN
+                </div>
+                <div [innerHTML]="highlightSearch(sub.text, searchTerm)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+    </ng-container>
+
+    <ng-template #noTranscript>
+      <div style="color: #999; font-style: italic;">
+        Transcript not available for {{ selectedLang }}.
+      </div>
+    </ng-template>
+  </div>
+
+
+</div>
